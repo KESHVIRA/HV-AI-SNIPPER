@@ -521,7 +521,8 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 // Passed all filters — execute snipe
                                 let payer = crate::wallet::load_keypair()?;
                                 let payer = std::sync::Arc::new(crate::wallet::load_keypair()?);
-                                let pool = match crate::sniper::fetch_raydium_pool_accounts(rpc_client, event.pool).await {
+                                let rpc_client = std::sync::Arc::new(rpc_client.clone());
+                                let pool = match crate::sniper::fetch_raydium_pool_accounts(&*rpc_client, event.pool).await {
                                     Ok(p) => p,
                                     Err(e) => {
                                         error!("❌ Failed to fetch Raydium pool accounts: {:?}", e);
@@ -537,7 +538,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 }
                                 // Build and send transaction using send_and_confirm_transaction
                                 let result = crate::sniper::snipe_on_raydium(
-                                    rpc_client,
+                                    &*rpc_client,
                                     &*payer,
                                     pool.clone(),
                                     event.dex_program,
@@ -549,7 +550,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                     Ok(sig) => {
                                         info!("🎯 Sniped! Signature: {}", sig);
                                         // === Auto-sell logic: sell after a delay ===
-                                        let rpc_client = rpc_client.clone();
+                                        let rpc_client = std::sync::Arc::clone(&rpc_client);
                                         let payer = std::sync::Arc::clone(&payer);
                                         let pool = pool.clone();
                                         let dex_program = event.dex_program;
@@ -562,7 +563,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                             info!("⏳ Waiting {}s before auto-sell...", delay_secs);
                                             tokio::time::sleep(std::time::Duration::from_secs(delay_secs)).await;
                                             match crate::sniper::sell_on_raydium(
-                                                &rpc_client,
+                                                &*rpc_client,
                                                 &*payer,
                                                 pool,
                                                 dex_program,
