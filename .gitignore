@@ -1,0 +1,26 @@
+# Build artifacts
+/target/
+**/*.rs.bk
+
+# Environment variables
+.env
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Debug files
+*.debug
+*.exe
+*.pdb
+
+# Coverage files
+**/coverage/
+*.profraw
+
+# System Files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solana Mempool Sniper - Buy & Sell Flow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        h1, h2 { color: #333; }
+        .step { margin-bottom: 1em; }
+        .buy { color: #22863a; font-weight: bold; }
+        .sell { color: #b58900; font-weight: bold; }
+        .arrow { margin: 0 0.5em; }
+        .code { font-family: monospace; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+        ul { margin-bottom: 1.5em; }
+    </style>
+</head>
+<body>
+    <h1>How Buy and Sell Take Place</h1>
+    <h2>Automated Buy (Snipe) Flow</h2>
+    <ol>
+        <li class="step">
+            <span class="buy">1. Pool Detection:</span>
+            <br>
+            The bot monitors the Solana mempool for new DEX pool creation events (e.g., Raydium).
+        </li>
+        <li class="step">
+            <span class="buy">2. Filtering:</span>
+            <br>
+            The pool is checked against filters (blacklist, whitelist, price, volume, liquidity, etc.).
+        </li>
+        <li class="step">
+            <span class="buy">3. Snipe Transaction Build:</span>
+            <br>
+            If all filters pass, the bot constructs a buy (swap) transaction using the detected pool and the configured amount (<span class="code">SNIPE_AMOUNT</span>).
+        </li>
+        <li class="step">
+            <span class="buy">4. Transaction Simulation (Optional):</span>
+            <br>
+            If simulation mode is enabled, the bot simulates the buy and logs the result without sending it.
+        </li>
+        <li class="step">
+            <span class="buy">5. Transaction Execution:</span>
+            <br>
+            The bot signs and sends the buy transaction to the Solana network, swapping SOL (or another base token) for the new token.
+        </li>
+        <li class="step">
+            <span class="buy">6. Confirmation:</span>
+            <br>
+            The bot waits for confirmation and logs the buy transaction signature.
+        </li>
+    </ol>
+
+    <h2>Automated Sell Flow (Not always present, but typical for snipers)</h2>
+    <ol>
+        <li class="step">
+            <span class="sell">1. Sell Trigger:</span>
+            <br>
+            The bot may monitor price, volume, or other signals to decide when to sell the sniped token.
+        </li>
+        <li class="step">
+            <span class="sell">2. Sell Transaction Build:</span>
+            <br>
+            The bot constructs a sell (swap) transaction, swapping the sniped token back to SOL or USDC.
+        </li>
+        <li class="step">
+            <span class="sell">3. Transaction Simulation (Optional):</span>
+            <br>
+            The bot can simulate the sell to estimate proceeds and slippage.
+        </li>
+        <li class="step">
+            <span class="sell">4. Transaction Execution:</span>
+            <br>
+            The bot signs and sends the sell transaction to the Solana network.
+        </li>
+        <li class="step">
+            <span class="sell">5. Confirmation:</span>
+            <br>
+            The bot waits for confirmation and logs the sell transaction signature and result.
+        </li>
+    </ol>
+
+    <h2>Summary Diagram</h2>
+    <p>
+        <span class="buy">[Pool Detected]</span>
+        <span class="arrow">&#8594;</span>
+        <span>[Filters Passed]</span>
+        <span class="arrow">&#8594;</span>
+        <span class="buy">[Buy/Snipe]</span>
+        <span class="arrow">&#8594;</span>
+        <span>[Hold/Monitor]</span>
+        <span class="arrow">&#8594;</span>
+        <span class="sell">[Sell]</span>
+    </p>
+
+    <h2>Notes</h2>
+    <ul>
+        <li>All transactions are signed by the bot's configured wallet.</li>
+        <li>Slippage and minimum output are set to protect against price swings.</li>
+        <li>Sell logic may be manual or automated, depending on your implementation.</li>
+        <li>All actions and results are logged for transparency and debugging.</li>
+    </ul>
+</body>
+</html>

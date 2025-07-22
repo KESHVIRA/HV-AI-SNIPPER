@@ -1,0 +1,30 @@
+# Solana RPC endpoints
+rpc_url = "https://api.mainnet-beta.solana.com"
+ws_url = "wss://api.mainnet-beta.solana.com"
+
+# Monitoring configuration
+[monitoring]
+# Monitor for new token creations
+monitor_token_creations = true
+# Monitor for new DEX pool creations
+monitor_dex_pools = true
+# List of program IDs to monitor
+monitored_programs = [
+    "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",  // OpenBook DEX
+    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",  // Serum DEX
+    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",  // Raydium AMM
+]
+
+# Performance settings
+[performance]
+# Maximum number of concurrent tasks
+max_concurrent_tasks = 50
+# Maximum transactions to process per second
+max_txs_per_second = 1000
+
+# Logging configuration
+[logging]
+# Log level (error, warn, info, debug, trace)
+level = "info"
+# Log file path (optional)
+# file = "mempool_monitor.log"

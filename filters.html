@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solana Mempool Sniper - Filters</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        h1 { color: #333; }
+        ul { margin-bottom: 1.5em; }
+        .filter-title { font-weight: bold; }
+        .code { font-family: monospace; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Filters Used in Solana Mempool Sniper</h1>
+    <ul>
+        <li>
+            <span class="filter-title">Blacklist Filter:</span>
+            <br>
+            Skips pools if either token is in the blacklist.<br>
+            <span class="code">if BLACKLIST.contains(token_a) || BLACKLIST.contains(token_b)</span>
+        </li>
+        <li>
+            <span class="filter-title">Whitelist Filter:</span>
+            <br>
+            If whitelist is not empty, only allows pools where at least one token is in the whitelist.<br>
+            <span class="code">if !WHITELIST.is_empty() &amp;&amp; !WHITELIST.contains(token_a) &amp;&amp; !WHITELIST.contains(token_b)</span>
+        </li>
+        <li>
+            <span class="filter-title">Price Filter:</span>
+            <br>
+            Skips pools if the pool price is below the minimum threshold.<br>
+            <span class="code">if pool_price &lt; min_price</span>
+        </li>
+        <li>
+            <span class="filter-title">Volume Filter:</span>
+            <br>
+            Skips pools if the pool volume is below the minimum threshold.<br>
+            <span class="code">if pool_volume &lt; min_vol</span>
+        </li>
+        <li>
+            <span class="filter-title">Already Sniped Filter:</span>
+            <br>
+            Skips pools that have already been sniped.<br>
+            <span class="code">if RECENT_SNIPES.contains(pool_id)</span>
+        </li>
+        <li>
+            <span class="filter-title">Concurrency Filter:</span>
+            <br>
+            Ensures only one snipe is in progress at a time.<br>
+            <span class="code">SNIPE_SEMAPHORE.try_acquire()</span>
+        </li>
+        <li>
+            <span class="filter-title">Liquidity Filter:</span>
+            <br>
+            Skips pools if both token liquidities are below the minimum.<br>
+            <span class="code">if coin_liq &lt; MIN_SOL_LIQUIDITY &amp;&amp; pc_liq &lt; MIN_SOL_LIQUIDITY</span>
+        </li>
+        <li>
+            <span class="filter-title">Simulation Mode Filter:</span>
+            <br>
+            If simulation mode is enabled, does not execute real snipes.<br>
+            <span class="code">if simulate</span>
+        </li>
+    </ul>
+</body>
+</html>

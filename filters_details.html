@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solana Mempool Sniper - Filter Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        h1, h2 { color: #333; }
+        ul, ol { margin-bottom: 1.5em; }
+        .code { font-family: monospace; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+        .env { color: #005a9c; }
+        .warn { color: #b58900; }
+        .skip { color: #dc322f; }
+        .ok { color: #22863a; }
+    </style>
+</head>
+<body>
+    <h1>Solana Mempool Sniper: Filter Logic & Configuration</h1>
+
+    <h2>Filter Order</h2>
+    <ol>
+        <li><b>Blacklist Filter</b>: Skips pools if either token is in the blacklist.</li>
+        <li><b>Whitelist Filter</b>: If whitelist is not empty, only allows pools where at least one token is in the whitelist.</li>
+        <li><b>Price Filter</b>: Skips pools if the pool price is below the minimum threshold.</li>
+        <li><b>Volume Filter</b>: Skips pools if the pool volume is below the minimum threshold.</li>
+        <li><b>Already Sniped Filter</b>: Skips pools that have already been sniped.</li>
+        <li><b>Concurrency Filter</b>: Ensures only one snipe is in progress at a time.</li>
+        <li><b>Liquidity Filter</b>: Skips pools if both token liquidities are below the minimum.</li>
+        <li><b>Simulation Mode Filter</b>: If simulation mode is enabled, does not execute real snipes.</li>
+    </ol>
+
+    <h2>How to Configure Filters</h2>
+    <ul>
+        <li>
+            <span class="env">Blacklist/Whitelist:</span>
+            <br>
+            Edit the <span class="code">BLACKLIST</span> and <span class="code">WHITELIST</span> arrays in <span class="code">src/mempool/mod.rs</span>.<br>
+            Example: <span class="code">static WHITELIST: &[&str] = &["So11111111111111111111111111111111111111112"];</span>
+        </li>
+        <li>
+            <span class="env">Price/Volume/Liquidity:</span>
+            <br>
+            Set environment variables:<br>
+            <span class="code">MIN_TOKEN_PRICE</span>, <span class="code">MIN_POOL_VOLUME</span>, <span class="code">MIN_SOL_LIQUIDITY</span>
+        </li>
+        <li>
+            <span class="env">Simulation Mode:</span>
+            <br>
+            Set <span class="code">SIMULATE_SNIPES=1</span> to enable simulation (no real snipes).
+        </li>
+        <li>
+            <span class="env">Slippage:</span>
+            <br>
+            Set <span class="code">MAX_SLIPPAGE_BPS</span> (basis points, e.g., 100 = 1%).
+        </li>
+    </ul>
+
+    <h2>What Happens When a Filter Triggers?</h2>
+    <ul>
+        <li><span class="warn">Blacklist/Whitelist:</span> Pool is skipped, warning is logged.</li>
+        <li><span class="warn">Price/Volume/Liquidity:</span> Pool is skipped, warning is logged.</li>
+        <li><span class="warn">Already Sniped:</span> Pool is skipped, warning is logged.</li>
+        <li><span class="warn">Concurrency:</span> If another snipe is in progress, pool is skipped, warning is logged.</li>
+        <li><span class="ok">Simulation:</span> Logs what would have happened, but does not execute a real snipe.</li>
+    </ul>
+
+    <h2>Example Log Output</h2>
+    <pre>
+[WARN]  Skipping blacklisted token
+[WARN]  Token not in whitelist, skipping...
+[WARN]  Pool price 0.5 below min 1.0, skipping
+[WARN]  Pool volume 1000000 below min 5000000, skipping
+[WARN]  Already sniped pool 123abc..., skipping...
+[WARN]  Another snipe already in progress. Skipping pool 123abc...
+[WARN]  💧 Pool too small — coin: 500000, pc: 400000
+[INFO]  [SIMULATION] Would snipe pool 123abc... with 5000000 lamports, slippage 100bps
+    </pre>
+
+    <h2>Extending or Customizing Filters</h2>
+    <ul>
+        <li>Edit <span class="code">src/mempool/mod.rs</span> to add or modify filter logic.</li>
+        <li>Recompile the project after making changes.</li>
+    </ul>
+</body>
+</html>
