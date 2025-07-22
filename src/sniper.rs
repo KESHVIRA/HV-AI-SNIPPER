@@ -1,3 +1,36 @@
+/// Fetch pool price and volume from a Raydium pool (realistic, but simplified)
+/// Returns (price, volume) as (f64, u64)
+pub async fn fetch_pool_price_and_volume(
+    rpc: &solana_client::nonblocking::rpc_client::RpcClient,
+    pool_id: solana_sdk::pubkey::Pubkey,
+) -> anyhow::Result<(f64, u64)> {
+    // Fetch Raydium pool accounts
+    let pool = fetch_raydium_pool_accounts(rpc, pool_id).await?;
+
+    // Fetch balances for coin and pc token accounts
+    let coin_balance = rpc.get_token_account_balance(&pool.pool_coin_token_account)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to fetch coin token balance: {:?}", e))?;
+    let pc_balance = rpc.get_token_account_balance(&pool.pool_pc_token_account)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to fetch pc token balance: {:?}", e))?;
+
+    // Parse as u64
+    let coin_amount = coin_balance.amount.parse::<u64>().unwrap_or(0);
+    let pc_amount = pc_balance.amount.parse::<u64>().unwrap_or(0);
+
+    // Price = pc_amount / coin_amount (e.g. USDC/SOL)
+    let price = if coin_amount > 0 {
+        pc_amount as f64 / coin_amount as f64
+    } else {
+        0.0
+    };
+
+    // Volume = coin_amount + pc_amount (simplified, could be improved)
+    let volume = coin_amount + pc_amount;
+
+    Ok((price, volume))
+}
 /// Sells a token on Raydium by swapping it back to SOL/USDC (reverse of snipe_on_raydium)
 pub async fn sell_on_raydium(
     rpc: &RpcClient,

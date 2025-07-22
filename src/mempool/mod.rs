@@ -177,6 +177,7 @@ impl MempoolMonitor {
             transaction_queue: Arc::new(Mutex::new(VecDeque::with_capacity(
                 mempool_config.max_queue_size,
             ))),
+            tx_rate_limiter: None,
         }
     }
 
@@ -304,8 +305,15 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
         let signature = signature.clone();
         // Fault tolerance: wrap in retry_with_backoff
         tokio::spawn(async move {
-            let tx_result = Self::retry_with_backoff(|| async {
-                Self::process_single_transaction(&rpc_client, &analyzer, &signature).await
+            let tx_result = Self::retry_with_backoff(|| {
+                let rpc_client = &rpc_client;
+                let analyzer = &analyzer;
+                let signature = &signature;
+                async move {
+                    Self::process_single_transaction(rpc_client, analyzer, signature)
+                        .await
+                        .map_err(anyhow::Error::from)
+                }
             }).await;
             match tx_result {
                 Ok(events) => {
@@ -512,6 +520,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 info!("Dynamic buy amount: {} lamports (pool_liq: {}, pct: {}, max: {})", buy_amount, pool_liq, buy_liquidity_pct, max_buy_lamports);
                                 // Passed all filters — execute snipe
                                 let payer = crate::wallet::load_keypair()?;
+                                let payer = std::sync::Arc::new(crate::wallet::load_keypair()?);
                                 let pool = match crate::sniper::fetch_raydium_pool_accounts(rpc_client, event.pool).await {
                                     Ok(p) => p,
                                     Err(e) => {
@@ -529,11 +538,10 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 // Build and send transaction using send_and_confirm_transaction
                                 let result = crate::sniper::snipe_on_raydium(
                                     rpc_client,
-                                    &payer,
-                                    pool,
+                                    &*payer,
+                                    pool.clone(),
                                     event.dex_program,
                                     buy_amount,
-                                    max_slippage_bps,
                                 )
                                 .await;
                                 drop(permit); // Release lock
@@ -542,7 +550,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                         info!("🎯 Sniped! Signature: {}", sig);
                                         // === Auto-sell logic: sell after a delay ===
                                         let rpc_client = rpc_client.clone();
-                                        let payer = payer.clone();
+                                        let payer = std::sync::Arc::clone(&payer);
                                         let pool = pool.clone();
                                         let dex_program = event.dex_program;
                                         let sell_amount = buy_amount; // sell the same amount as bought
@@ -555,7 +563,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                             tokio::time::sleep(std::time::Duration::from_secs(delay_secs)).await;
                                             match crate::sniper::sell_on_raydium(
                                                 &rpc_client,
-                                                &payer,
+                                                &*payer,
                                                 pool,
                                                 dex_program,
                                                 sell_amount,
