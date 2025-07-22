@@ -432,7 +432,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 let min_vol = std::env::var("MIN_POOL_VOLUME").ok().and_then(|v| v.parse::<u64>().ok());
 
                                 // Fetch pool info (price/volume) using a helper (stubbed for now)
-                                let (pool_price, pool_volume) = match crate::sniper::fetch_pool_price_and_volume(rpc_client, event.pool).await {
+                                let (pool_price, pool_volume) = match crate::sniper::fetch_pool_price_and_volume(&*rpc_client, event.pool).await {
                                     Ok((price, volume)) => (price, volume),
                                     Err(e) => {
                                         warn!("Failed to fetch pool price/volume: {:?}", e);
