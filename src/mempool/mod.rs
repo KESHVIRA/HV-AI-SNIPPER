@@ -305,8 +305,9 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
         let signature = signature.clone();
         // Fault tolerance: wrap in retry_with_backoff
         tokio::spawn(async move {
+            let rpc_client = std::sync::Arc::clone(&rpc_client);
             let tx_result = Self::retry_with_backoff(|| {
-                let rpc_client = &rpc_client;
+                let rpc_client = std::sync::Arc::clone(&rpc_client);
                 let analyzer = &analyzer;
                 let signature = &signature;
                 async move {
@@ -344,7 +345,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
 
     /// Process a single transaction
     async fn process_single_transaction(
-        rpc_client: &RpcClient,
+        rpc_client: std::sync::Arc<RpcClient>,
         analyzer: &TransactionAnalyzer,
         signature_str: &str,
     ) -> MempoolResult<Vec<MempoolEvent>> {
@@ -360,8 +361,10 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
             max_supported_transaction_version: Some(0),
         };
 
+        let rpc_client_clone = std::sync::Arc::clone(&rpc_client);
         let tx = Self::retry_with_backoff(|| {
-            Box::pin(async {
+            let rpc_client = std::sync::Arc::clone(&rpc_client_clone);
+            Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(3000)).await;
                 rpc_client
                     .get_transaction_with_config(&signature, config.clone())
