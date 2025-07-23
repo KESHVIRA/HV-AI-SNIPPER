@@ -1,3 +1,11 @@
+// Global RPC rate limiter (enforced for all RPC calls)
+pub static GLOBAL_RPC_RATE_LIMITER: Lazy<Semaphore> = Lazy::new(|| {
+    let max_rps = std::env::var("MAX_TXS_PER_SECOND")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .unwrap_or(5);
+    Semaphore::new(max_rps)
+});
 //! Mempool monitoring functionality for Solana transactions.
 use std::fmt;
 use std::collections::VecDeque;
@@ -366,6 +374,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
             let rpc_client = std::sync::Arc::clone(&rpc_client_clone);
             Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(3000)).await;
+                let _permit = GLOBAL_RPC_RATE_LIMITER.acquire().await.unwrap();
                 rpc_client
                     .get_transaction_with_config(&signature, config.clone())
                     .await
@@ -432,6 +441,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                 let min_vol = std::env::var("MIN_POOL_VOLUME").ok().and_then(|v| v.parse::<u64>().ok());
 
                                 // Fetch pool info (price/volume) using a helper (stubbed for now)
+                                let _permit = GLOBAL_RPC_RATE_LIMITER.acquire().await.unwrap();
                                 let (pool_price, pool_volume) = match crate::sniper::fetch_pool_price_and_volume(&*rpc_client, event.pool).await {
                                     Ok((price, volume)) => (price, volume),
                                     Err(e) => {
@@ -474,6 +484,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                     }
                                 };
                                 // Liquidity check
+                                let _permit = GLOBAL_RPC_RATE_LIMITER.acquire().await.unwrap();
                                 let coin_liq = rpc_client
                                     .get_token_account_balance(&event.token_a)
                                     .await
@@ -481,6 +492,7 @@ pub async fn subscribe_logs(&self) -> MempoolResult<mpsc::Receiver<String>> {
                                     .amount
                                     .parse::<u64>()
                                     .unwrap_or(0);
+                                let _permit = GLOBAL_RPC_RATE_LIMITER.acquire().await.unwrap();
                                 let pc_liq = rpc_client
                                     .get_token_account_balance(&event.token_b)
                                     .await
